@@ -78,8 +78,11 @@
 
     <p align="center"><img src="./img/result.png"  width="300" height="380"><p>
 
+4. ver1.1 결과
+    <p align="center"><img src="./img/result1.1.png"  width="300" height="410"><p>
 ## 변경 사항
 1. ver 1.1 
     * BPM 측정기 좌측 하단에서만 인식 -> 모든 하단 부에서 인식 수정
     * img_to_string(이미지 인식 후 문자열로 변환 함수) bpm 결과 필터링 알고리즘 수정
     * 특정 색상 추출 범위 수정
+    * 0.5 단위로 BPM 평균으로 결과 데이터를 수정 
