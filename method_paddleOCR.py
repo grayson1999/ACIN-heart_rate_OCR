@@ -93,23 +93,34 @@ class Acin_OCR():
                 cnt += 1
                 bpm_possible_contours.append(d)
         return self.find_likely_BPM_contour(bpm_possible_contours)
+
+    ## 녹색 추출 후 색반전을 통해 bpm의 인식률을 높임
+    def img_to_get_green(self):
+        frame = self.img
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) # BGR을 HSV로 변환해줌 # define range of blue color in HSV 
+        lower_green = np.array([0, 15, 0]) # 초록색 범위 
+        upper_green = np.array([190, 210, 190])
+        mask2 = cv2.inRange(hsv, lower_green, upper_green) # Bitwise-AND mask and original image 
+        res2 = cv2.bitwise_and(frame, frame, mask=mask2) # 흰색 영역에 초록색 마스크를 씌워줌. 
+        res2 = 255 - res2
+        inversion_gray = cv2.cvtColor(res2, cv2.COLOR_BGR2GRAY)
+        return inversion_gray
+
     
     ## bpm 측정기 후보군 찾기
     def find_likely_BPM_contour(self,bpm_possible_contours):
-        one_third_X = round(self.height/3*2)
-        one_third_Y = round(self.width/3*1)
-
+        one_third_Y = round(self.height/2)
         bpm_contour_result = []
 
         for contour in bpm_possible_contours:
-            if contour["x"] < one_third_X and contour["y"] > one_third_Y:
+            if contour["y"] > one_third_Y :
                 bpm_contour_result.append(contour)
 
         ## 좌표를 통해 이미지 자르기
         plate_imgs = []
         for result in bpm_contour_result:
             img_cropped = cv2.getRectSubPix(
-                self.img_thresh, 
+                self.img_to_get_green(),## self.img_thresh (녹색 검출이 아닐 시)self.img_to_get_green()
                 patchSize=(int(result["w"]), int(result["h"])), 
                 center=(int(result["cx"]), int(result["cy"]))
                 )
@@ -291,65 +302,110 @@ class Acin_OCR():
             bpm_reslut_text = ""
             for img in img_list:
                 result = self.ocr.ocr(img, cls=True)
-                try:
-                    result = result[0][-1][0]   #이미지 인식이 불가능 하면 공백을 반환함 따라서 범위 오류가 남
-                except IndexError : 
-                    result = "" 
-                if len(result) >= 2  and result.isdigit():
-                    bpm_reslut_text = result
-                    break
+                if len(result) > 0:
+                    for string in result:
+                        string = string[1][0]
+                        if len(string) >=2 and string.isdigit():
+                            bpm_reslut_text = string
+                            break
+                else:
+                    pass 
             return bpm_reslut_text
+
+    ## 0.5초 간격으로 평균 구하기   
+    def mk_avg_result(self,initial_result):
+        result = {"time":[],"bpm":[]}
+        temp_time = initial_result["time"][0][:-3] + ("0" if int(initial_result["time"][0][-3]) < 5 else "5")
+        temp_bpm = []
+        for i in range(len(initial_result["time"])):
+            initial_millisec = int(initial_result["time"][i].split(":")[3][0])
+            # 0.5초를 기준으로 변경될 때 마다 result dict 에 저장
+            if initial_millisec < 5:
+                if temp_time != initial_result["time"][i][:-3] + "0":
+                    temp_bpm = np.array(temp_bpm)
+                    bpm_avg = np.mean(temp_bpm)
+                    result["time"].append(temp_time)
+                    result["bpm"].append(bpm_avg)
+                    temp_time = initial_result["time"][i][:-3] + "0"
+                    temp_bpm = []
+                else:
+                    temp_bpm.append(int(initial_result["bpm"][i]))
+            else:
+                if temp_time != initial_result["time"][i][:-3] + "5":
+                    temp_bpm = np.array(temp_bpm)
+                    bpm_avg = np.mean(temp_bpm)
+                    result["time"].append(temp_time)
+                    result["bpm"].append(bpm_avg)
+                    temp_time = initial_result["time"][i][:-3] + "5"
+                    temp_bpm = []
+                else:
+                    temp_bpm.append(int(initial_result["bpm"][i]))
+        return result
+
+
+    def main(self):
+        path = "./datasample/text2.mp4"
+        cap = cv2.VideoCapture(path)
+        initial_result = {"time":[],"bpm":[]}
+        if cap.isOpened():
+            while True:
+                ret, self.img = cap.read()
+                if ret:
+                    cv2.imshow("video_file", self.img)
+                    contours_dic = self.initial_setting(self.img)
+                    time_result_string = self.find_all_time_contours(contours_dic)
+                    initial_result["time"].append(time_result_string)
+                    bpm_result_string = self.find_all_BPM_contours(contours_dic)
+
+                    ## 인식한 숫자와 전에 인식한 수의 차이가 5이상 일때는 인식 오류로 봄
+                    prepare_bpm = 0
+                    for bpm in initial_result['bpm'][-1::-1]:
+                        if bpm.isdigit():
+                            prepare_bpm = int(bpm)
+                            break
+                    if len(initial_result['bpm']) > 0 and bpm_result_string != "" and (prepare_bpm - int(bpm_result_string) > 5 or prepare_bpm - int(bpm_result_string) < -5):    
+                        bpm_result_string = ""
+                        
+                    initial_result['bpm'].append(bpm_result_string)
+                    cv2.waitKey(100)## 밀리세컨드 대기
+                else:
+                    break
+        else:
+            print("error")
+        cap.release()                       
+        cv2.destroyAllWindows()
+
+        print(initial_result)
+        ##데이터가 없는 부분 검출 및 삭제
+        nodata = []
+        for i in range(len(initial_result["bpm"])):
+            if initial_result["bpm"][i] == "":
+                nodata.append(i)
+            if initial_result["time"][i] == "":
+                nodata.append(i)
+
+        nodata = list(set(nodata))
+        nodata.sort(reverse=True)
+
+        for i in nodata:
+            del initial_result["bpm"][i]
+            del initial_result["time"][i]
+        
+        ## 0.5초 간격으로 평균 구하기
+        result = self.mk_avg_result(initial_result)
+            
+        # 출력
+        for i in range(len(result["time"])):
+            print("시간: {}   ||    BPM: {}".format(result["time"][i],result['bpm'][i]))
+        
+
 
 
 ##동영상
-acin = Acin_OCR()
-path = "./dataset1/first_env9.mp4"
-cap = cv2.VideoCapture(path)
-result = {"time":[],"bpm":[]}
-if cap.isOpened():
-    while True:
-        ret, img = cap.read()
-        if ret:
-            cv2.imshow("video_file", img)
-            contours_dic = acin.initial_setting(img)
-            time_result_string = acin.find_all_time_contours(contours_dic)
-            result["time"].append(time_result_string)
-            bpm_result_string = acin.find_all_BPM_contours(contours_dic)
+if __name__ == "__main__":
+    acin = Acin_OCR()
+    acin.main()
 
-            ## 인식한 숫자와 전에 인식한 수의 차이가 5이상 일때는 인식 오류로 봄
-            prepare_bpm = 0
-            for bpm in result['bpm'][-1::-1]:
-                if bpm.isdigit():
-                    prepare_bpm = int(bpm)
-                    break
-            if len(result['bpm']) > 0 and bpm_result_string != "" and (prepare_bpm - int(bpm_result_string) > 4 or prepare_bpm - int(bpm_result_string) < -4):    
-                bpm_result_string = ""
-                
-            result['bpm'].append(bpm_result_string)
-            cv2.waitKey(100)
-        else:
-            break
-else:
-    print("error")
-cap.release()                       
-cv2.destroyAllWindows()
-print(result)
-nodata = []
-for i in range(len(result["bpm"])):
-    if result["bpm"][i] == "":
-        nodata.append(i)
-    if result["time"][i] == "":
-        nodata.append(i)
-
-nodata = list(set(nodata))
-nodata.sort(reverse=True)
-
-for i in nodata:
-    del result["bpm"][i]
-    del result["time"][i]
-
-for i in range(len(result["time"])):
-    print("시간: {}   ||    BPM: {}".format(result["time"][i][3:],result['bpm'][i]))
 
 
 
