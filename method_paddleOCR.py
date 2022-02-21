@@ -72,6 +72,7 @@ class Acin_OCR():
             })
         return contours_dict
 
+
     ## BPM 데이터 후보군 찾기
     def find_all_BPM_contours(self,contours_dict):
         ## BPM 데이터 후보군 찾기
@@ -93,6 +94,7 @@ class Acin_OCR():
                 cnt += 1
                 bpm_possible_contours.append(d)
         return self.find_likely_BPM_contour(bpm_possible_contours)
+
 
     ## 녹색 추출 후 색반전을 통해 bpm의 인식률을 높임
     def img_to_get_green(self):
@@ -127,7 +129,6 @@ class Acin_OCR():
             plate_imgs.append(img_cropped)
         return self.img_to_string(plate_imgs,division="bpm")
     
-
 
     ## 시계 데이터 후보군 찾기
     def find_all_time_contours(self,contours_dict):
@@ -312,6 +313,7 @@ class Acin_OCR():
                     pass 
             return bpm_reslut_text
 
+
     ## 0.5초 간격으로 평균 구하기   
     def mk_avg_result(self,initial_result):
         result = {"time":[],"bpm":[]}
@@ -398,8 +400,6 @@ class Acin_OCR():
         for i in range(len(result["time"])):
             print("시간: {}   ||    BPM: {}".format(result["time"][i],result['bpm'][i]))
         
-
-
 
 ##동영상
 if __name__ == "__main__":
