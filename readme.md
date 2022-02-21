@@ -80,10 +80,15 @@
 
 4. ver1.1 결과
     <p align="center"><img src="./img/result1.1.png"  width="300" height="410"><p>
-    
+
 ## 변경 사항
 1. ver 1.1 
     * BPM 측정기 좌측 하단에서만 인식 -> 모든 하단 부에서 인식 수정
     * img_to_string(이미지 인식 후 문자열로 변환 함수) bpm 결과 필터링 알고리즘 수정
     * 특정 색상 추출 범위 수정
     * 0.5 단위로 BPM 평균으로 결과 데이터를 수정 
+2. ver 1.2
+    * requirements.txt 작성 
+    * 특정 색상 추출로 bpm 측정기에서 추가조치 없이(가리지 않고) 인식 가능하게 수정<br><br>
+    <img src="./img/inversion_size_ori.png"  width="260" height="150"><br>
+    <img src="./img/inversion_gray_2.png"  width="260" height="150">

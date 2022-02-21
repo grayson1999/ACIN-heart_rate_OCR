@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from paddleocr import PaddleOCR
+import pandas as pd
 
 class Acin_OCR():
     def __init__(self):
@@ -100,8 +101,10 @@ class Acin_OCR():
     def img_to_get_green(self):
         frame = self.img
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) # BGR을 HSV로 변환해줌 # define range of blue color in HSV 
-        lower_green = np.array([0, 15, 0]) # 초록색 범위 
-        upper_green = np.array([190, 210, 190])
+        # lower_green = np.array([0, 15, 0]) # 1차 초록색 범위 
+        # upper_green = np.array([190, 210, 190])
+        lower_green = np.array([45, 85, 130]) # 초록색 범위 
+        upper_green = np.array([90, 255, 245])  
         mask2 = cv2.inRange(hsv, lower_green, upper_green) # Bitwise-AND mask and original image 
         res2 = cv2.bitwise_and(frame, frame, mask=mask2) # 흰색 영역에 초록색 마스크를 씌워줌. 
         res2 = 255 - res2
@@ -346,7 +349,7 @@ class Acin_OCR():
 
 
     def main(self):
-        path = "./datasample/text2.mp4"
+        path = "./datasample/test5.mp4"
         cap = cv2.VideoCapture(path)
         initial_result = {"time":[],"bpm":[]}
         if cap.isOpened():
@@ -396,9 +399,12 @@ class Acin_OCR():
         ## 0.5초 간격으로 평균 구하기
         result = self.mk_avg_result(initial_result)
             
-        # 출력
-        for i in range(len(result["time"])):
-            print("시간: {}   ||    BPM: {}".format(result["time"][i],result['bpm'][i]))
+        # # 출력
+        # for i in range(len(result["time"])):
+        #     print("시간: {}   ||    BPM: {}".format(result["time"][i],result['bpm'][i]))
+        
+        result_pd = pd.DataFrame(result)
+        result_pd.to_csv("result.csv",encoding="cp949")
         
 
 ##동영상
