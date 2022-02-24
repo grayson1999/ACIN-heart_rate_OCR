@@ -81,6 +81,8 @@
 4. ver1.1 결과
     <p align="center"><img src="./img/result1.1.png"  width="300" height="410"><p>
 
+5. ver1.2 결과
+    <p align="center"><img src="./img/result1.2.png"  width="350" height="410"><p>
 ## 변경 사항
 1. ver 1.1 
     * BPM 측정기 좌측 하단에서만 인식 -> 모든 하단 부에서 인식 수정
