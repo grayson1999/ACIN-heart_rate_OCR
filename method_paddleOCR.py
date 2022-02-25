@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 from paddleocr import PaddleOCR
 import pandas as pd
+import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 class Acin_OCR():
     def __init__(self):
@@ -347,13 +349,15 @@ class Acin_OCR():
                     temp_bpm.append(int(initial_result["bpm"][i]))
         return result
 
-
     def main(self):
-        path = "./datasample/test5.mp4"
+        path = "./datasample/sample3.mp4"
         cap = cv2.VideoCapture(path)
         initial_result = {"time":[],"bpm":[]}
         if cap.isOpened():
             while True:
+                tempf = open("test_video_time.txt","a")
+                tempf.write(str(cap.get(cv2.CAP_PROP_POS_MSEC))+"\n")
+                tempf.close()
                 ret, self.img = cap.read()
                 if ret:
                     cv2.imshow("video_file", self.img)
