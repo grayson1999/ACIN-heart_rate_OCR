@@ -350,7 +350,7 @@ class Acin_OCR():
         return result
 
     def main(self):
-        path = "./datasample/sample3.mp4"
+        path = "./datasample/22_02_27_sample1_ocr.mp4"
         cap = cv2.VideoCapture(path)
         initial_result = {"time":[],"bpm":[]}
         if cap.isOpened():
