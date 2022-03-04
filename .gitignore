@@ -1,0 +1,5 @@
+*.mp4
+.ipynb_checkpoints/
+datasample/
+*.ipynb
+paddleOCR.py

@@ -8,6 +8,9 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 class Acin_OCR():
     def __init__(self):
         self.ocr = PaddleOCR(use_angle_cls=True, lang='en') # need to run only once to download and load model into memory
+        path_dir = r'C:\Users\kgg\Desktop\lab\heart-rate\ACIN-Finding_error_rate\Data'
+        ## 데이터 파일 중 마지막 폴더 이름 가져오기(폴더 선택)
+        self.last_file_name = os.listdir(path_dir)[-1]
 
 
     ## 이미지 window에 띄우기
@@ -105,8 +108,10 @@ class Acin_OCR():
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) # BGR을 HSV로 변환해줌 # define range of blue color in HSV 
         # lower_green = np.array([0, 15, 0]) # 1차 초록색 범위 
         # upper_green = np.array([190, 210, 190])
-        lower_green = np.array([45, 85, 130]) # 초록색 범위 
-        upper_green = np.array([90, 255, 245])  
+        # lower_green = np.array([45, 85, 130]) #2차 초록색 범위 
+        # upper_green = np.array([90, 255, 245])  
+        lower_green = np.array([40, 70, 90]) #3차 초록색 범위 
+        upper_green = np.array([90, 255, 245]) 
         mask2 = cv2.inRange(hsv, lower_green, upper_green) # Bitwise-AND mask and original image 
         res2 = cv2.bitwise_and(frame, frame, mask=mask2) # 흰색 영역에 초록색 마스크를 씌워줌. 
         res2 = 255 - res2
@@ -322,36 +327,46 @@ class Acin_OCR():
     ## 0.5초 간격으로 평균 구하기   
     def mk_avg_result(self,initial_result):
         result = {"time":[],"bpm":[]}
-        temp_time = initial_result["time"][0][:-3] + ("0" if int(initial_result["time"][0][-3]) < 5 else "5")
-        temp_bpm = []
+        check = -1
+        temp = []
         for i in range(len(initial_result["time"])):
-            initial_millisec = int(initial_result["time"][i].split(":")[3][0])
-            # 0.5초를 기준으로 변경될 때 마다 result dict 에 저장
-            if initial_millisec < 5:
-                if temp_time != initial_result["time"][i][:-3] + "0":
-                    temp_bpm = np.array(temp_bpm)
-                    bpm_avg = np.mean(temp_bpm)
-                    result["time"].append(temp_time)
-                    result["bpm"].append(bpm_avg)
-                    temp_time = initial_result["time"][i][:-3] + "0"
-                    temp_bpm = []
+            ms = int(initial_result["time"][i][9:10])
+            if check == -1:
+                default_format = initial_result["time"][i][:9]
+                if ms <5:
+                    check = False
                 else:
-                    temp_bpm.append(int(initial_result["bpm"][i]))
+                    check = True
+            if ms < 5:
+                if check == True:
+                    current_time = default_format + "5"
+                    avg = sum(temp)/len(temp)
+                    temp = []
+                    result["time"].append(current_time)
+                    result["bpm"].append(avg)
+                    check = False
+                    default_format = initial_result["time"][i][:9]
+                temp.append(float(initial_result["bpm"][i]))
             else:
-                if temp_time != initial_result["time"][i][:-3] + "5":
-                    temp_bpm = np.array(temp_bpm)
-                    bpm_avg = np.mean(temp_bpm)
-                    result["time"].append(temp_time)
-                    result["bpm"].append(bpm_avg)
-                    temp_time = initial_result["time"][i][:-3] + "5"
-                    temp_bpm = []
-                else:
-                    temp_bpm.append(int(initial_result["bpm"][i]))
+                if check == False:
+                    current_time = default_format + "0"
+                    avg = sum(temp)/len(temp)
+                    temp = []
+                    result["time"].append(current_time)
+                    result["bpm"].append(avg)
+                    check = True
+                    default_format = initial_result["time"][i][:9]
+                temp.append(float(initial_result["bpm"][i]))
         return result
 
+
+    ## 메인함수
     def main(self):
-        path = "./datasample/22_02_27_sample1_ocr.mp4"
-        cap = cv2.VideoCapture(path)
+        sharepath = "C:/Users/kgg/Desktop/lab/heart-rate/ACIN-Finding_error_rate/Data/"
+        inputpath = self.last_file_name+"/input/"+self.last_file_name+"_ocr.mp4"
+        outpath = self.last_file_name+"/output/"+"[OCR]"+self.last_file_name+"_ocr.csv"
+
+        cap = cv2.VideoCapture(sharepath+inputpath)
         initial_result = {"time":[],"bpm":[]}
         if cap.isOpened():
             while True:
@@ -365,7 +380,7 @@ class Acin_OCR():
                     time_result_string = self.find_all_time_contours(contours_dic)
                     initial_result["time"].append(time_result_string)
                     bpm_result_string = self.find_all_BPM_contours(contours_dic)
-
+                    print("*"*5+"{},{} 인식되었습니다.".format(time_result_string,bpm_result_string)+"*"*5)
                     ## 인식한 숫자와 전에 인식한 수의 차이가 5이상 일때는 인식 오류로 봄
                     prepare_bpm = 0
                     for bpm in initial_result['bpm'][-1::-1]:
@@ -408,7 +423,7 @@ class Acin_OCR():
         #     print("시간: {}   ||    BPM: {}".format(result["time"][i],result['bpm'][i]))
         
         result_pd = pd.DataFrame(result)
-        result_pd.to_csv("result.csv",encoding="cp949")
+        result_pd.to_csv(sharepath+outpath,encoding="cp949")
         
 
 ##동영상
