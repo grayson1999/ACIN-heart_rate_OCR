@@ -99,5 +99,9 @@
     * csv파일로 저장하는 함수 추가
 3. ver 2.0
     * 형식 변환 알고리즘과 OCR 모듈 분리
+4. ver 2.1
+    * 시간 인식 중 오류 수정 및 검증 알고리즘 추가 
+5. ver 2.1.1
+    * [[ACIN-Finding_error_rate](https://github.com/Grayson1999/ACIN-Finding_error_rate)]의 파일 관리 방법에 따라 저장 위치 변경
 
         

@@ -305,7 +305,8 @@ class Acin_OCR():
                     result = result[0][-1][0]   #이미지 인식이 불가능 하면 공백을 반환함 따라서 범위 오류가 남
                 except IndexError : 
                     result = "" 
-                if len(result) == 12 and result[-3:].isdigit():
+                result_split = result.split(":")
+                if len(result) == 12 and result_split[-1].isdigit() and len(result_split[-1]) == 3:
                     time_result_string = result
                     break
             return time_result_string
@@ -399,7 +400,6 @@ class Acin_OCR():
         cap.release()                       
         cv2.destroyAllWindows()
 
-        print(initial_result)
         ##데이터가 없는 부분 검출 및 삭제
         nodata = []
         for i in range(len(initial_result["bpm"])):
