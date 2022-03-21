@@ -110,8 +110,8 @@ class Acin_OCR():
         # upper_green = np.array([190, 210, 190])
         # lower_green = np.array([45, 85, 130]) #2차 초록색 범위 
         # upper_green = np.array([90, 255, 245])  
-        lower_green = np.array([40, 70, 90]) #3차 초록색 범위 
-        upper_green = np.array([90, 255, 245]) 
+        lower_green = np.array([60, 50, 50]) # 4차 초록색 범위 
+        upper_green = np.array([100, 255, 180])
         mask2 = cv2.inRange(hsv, lower_green, upper_green) # Bitwise-AND mask and original image 
         res2 = cv2.bitwise_and(frame, frame, mask=mask2) # 흰색 영역에 초록색 마스크를 씌워줌. 
         res2 = 255 - res2
@@ -382,13 +382,13 @@ class Acin_OCR():
                     initial_result["time"].append(time_result_string)
                     bpm_result_string = self.find_all_BPM_contours(contours_dic)
                     print("*"*5+"{},{} 인식되었습니다.".format(time_result_string,bpm_result_string)+"*"*5)
-                    ## 인식한 숫자와 전에 인식한 수의 차이가 5이상 일때는 인식 오류로 봄
+                    ## 인식한 숫자와 전에 인식한 수의 차이가 5이상 일때는 인식 오류로 봄, + 60bpm < x <140bpm 범위 외 인식 오류로 봄
                     prepare_bpm = 0
                     for bpm in initial_result['bpm'][-1::-1]:
                         if bpm.isdigit():
                             prepare_bpm = int(bpm)
                             break
-                    if len(initial_result['bpm']) > 0 and bpm_result_string != "" and (prepare_bpm - int(bpm_result_string) > 5 or prepare_bpm - int(bpm_result_string) < -5):    
+                    if len(initial_result['bpm']) > 0 and bpm_result_string != "" and (prepare_bpm - int(bpm_result_string) > 5 or prepare_bpm - int(bpm_result_string) < -5) and int(bpm_result_string) < 140 and int(bpm_result_string) > 60:    
                         bpm_result_string = ""
                         
                     initial_result['bpm'].append(bpm_result_string)

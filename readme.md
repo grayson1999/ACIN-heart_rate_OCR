@@ -103,5 +103,7 @@
     * 시간 인식 중 오류 수정 및 검증 알고리즘 추가 
 5. ver 2.1.1
     * [[ACIN-Finding_error_rate](https://github.com/Grayson1999/ACIN-Finding_error_rate)]의 파일 관리 방법에 따라 저장 위치 변경
-
+6. ver 2.1.2
+    * 처음 인식 오류 시 나머지 값이 인식이 되지 않은 오류 수정(인식 범위 추가)
+    * 처음 인식의 정확도를 높이기 위해 색상 값을 방어적으로 설정
         
