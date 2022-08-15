@@ -9,9 +9,18 @@ class Acin_OCR():
     def __init__(self):
         self.ocr = PaddleOCR(use_angle_cls=True, lang='en') # need to run only once to download and load model into memory
         path_dir = r'C:\Users\kgg\Desktop\lab\heart-rate\ACIN-Finding_error_rate\Data'
-        ## 데이터 파일 중 마지막 폴더 이름 가져오기(폴더 선택)
-        self.last_file_name = os.listdir(path_dir)[-1]
-
+        
+        ## 데이터 파일 중 폴더 이름 가져오기(폴더 선택)
+        list_path = os.listdir(path_dir)
+        for index in range(len(list_path)): 
+            print(f"[{index}] {list_path[index]}",end=" ")
+        print()
+        while(1):
+            user_index = int(input("select index: "))
+            if user_index < len(list_path):
+                break
+        folder_name = list_path[user_index]
+        self.last_file_name = folder_name
 
     ## 이미지 window에 띄우기
     def showimg(self, img):
@@ -110,8 +119,10 @@ class Acin_OCR():
         # upper_green = np.array([190, 210, 190])
         # lower_green = np.array([45, 85, 130]) #2차 초록색 범위 
         # upper_green = np.array([90, 255, 245])  
-        lower_green = np.array([60, 50, 50]) # 4차 초록색 범위 
-        upper_green = np.array([100, 255, 180])
+        # lower_green = np.array([60, 50, 50]) # 4차 초록색 범위 
+        # upper_green = np.array([100, 255, 180])
+        lower_green = np.array([30, 40, 40]) # 5차 초록색 범위 
+        upper_green = np.array([90, 255, 200])
         mask2 = cv2.inRange(hsv, lower_green, upper_green) # Bitwise-AND mask and original image 
         res2 = cv2.bitwise_and(frame, frame, mask=mask2) # 흰색 영역에 초록색 마스크를 씌워줌. 
         res2 = 255 - res2
@@ -301,12 +312,13 @@ class Acin_OCR():
             time_result_string = ""
             for img in img_list:
                 result = self.ocr.ocr(img, cls=True)
+                print(result)
                 try:
                     result = result[0][-1][0]   #이미지 인식이 불가능 하면 공백을 반환함 따라서 범위 오류가 남
                 except IndexError : 
                     result = "" 
                 result_split = result.split(":")
-                if len(result) == 12 and result_split[-1].isdigit() and len(result_split[-1]) == 3:
+                if len(result) == 12 and result_split[-1].isdigit() and result_split[0].isdigit() and len(result_split[-1]) == 3:
                     time_result_string = result
                     break
             return time_result_string
@@ -317,7 +329,7 @@ class Acin_OCR():
                 if len(result) > 0:
                     for string in result:
                         string = string[1][0]
-                        if len(string) >=2 and string.isdigit():
+                        if string.isdigit() and int(string) < 180 and int(string) > 60:
                             bpm_reslut_text = string
                             break
                 else:
